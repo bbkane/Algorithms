@@ -58,3 +58,4 @@ function(add_proj name)
 endfunction()
 
 add_proj(Dijkstra1 main.cpp)
+add_proj(Dijkstra2 main.cpp)
