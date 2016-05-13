@@ -45,14 +45,40 @@ int main()
 {
     //NOTE: don't push or pull from this after init!
     // I'm setting iterators to it in my code!
-    std::vector<Connection> connections{
-        Connection('a', 'b', 1),
-        Connection('a', 'c', 3),
-        Connection('b', 'c', 1)
+    std::vector<Connection> connections;
+    connections.reserve(20);
+
+    //short code :)
+    auto add = [&connections](char first, char second, int cost)
+    {
+        connections.push_back(Connection(first, second, cost));
+        connections.push_back(Connection(second, first, cost));
     };
 
-    char start_id = 'a';
-    char end_id = 'c';
+    add('o', 'a', 2);
+    add('o', 'b', 5);
+    add('o', 'c', 4);
+    add('a', 'b', 2);
+    add('a', 'd', 7);
+    add('a', 'f', 12);
+    add('b', 'c', 1);
+    add('b', 'e', 3);
+    add('b', 'd', 4);
+    add('c', 'e', 4);
+    add('d', 'e', 1);
+    add('d', 't', 5);
+    add('e', 't', 7);
+    add('f', 't', 3);
+    
+    for (auto& c : connections)
+    {
+        std::cout << c << std::endl;
+    }
+
+    std::cout << "end enumeration" << std::endl;
+
+    char start_id = 'o';
+    char end_id = 't';
 
     if (start_id == end_id)
     {
@@ -88,6 +114,8 @@ int main()
         if (cheapest->second == end_id)
         {
             cheapest->next_connection = connections.end();
+
+            // this kills it. Those iterators are invalidated at some point :(
             for (auto it = first; it != connections.end(); it = it->next_connection)
             {
                 std::cout << *it << std::endl;
