@@ -92,13 +92,37 @@ class Graph:
 
     def get_neighbors(self, current_node):
         yield from {e for e in self.edges if e.start == current_node}
-                        
 
+FIELD = """\
+ooooooooooooeo
+xxxxoooooooooo
+ooooooxxooxxxx
+xxoxxooooooooo
+ooooxooooooooo
+osoooooooooooo
+"""
 class Field:
     
-    def __init__(self):
+    def __init__(self, field):
+        self.field = [f.strip() for f in field.strip().split('\n')]
+    
+    def get_location(self, char):
+        for row_num, row in enumerate(self.field):
+            for col_num, col in enumerate(row):
+                if col == char:
+                    return (row_num, col_num)
+        raise ValueError("%r not in Field" % char)
+        
+    def get_neighbors(self, node):
         pass
-
+    
+    def modify(self, *args):
+        """turn (row, column) to 'p'"""
+        pass
+    
+    def __str__(self):
+        pass
+    
 def main():
     g = Graph()
     
@@ -114,6 +138,8 @@ def main():
         
     print(dijkstra('1', '5', g.get_neighbors))
     
-
+    f = Field(FIELD)
+    print(f.field)
+    print(f.get_location('s'))
 if __name__ == '__main__':
     main()
