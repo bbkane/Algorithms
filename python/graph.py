@@ -5,23 +5,7 @@ Created on Mon Jul 11 21:32:46 2016
 @author: Ben
 """
 
-# This one works!!!
-
 from collections import namedtuple
-
-Edge = namedtuple('Edge', ['start', 'finish', 'cost'])
-
-class Element:
-    # Can't use a namedtuple because it needs to be mutable
-    def __init__(self, item, cost):
-        self.item = item
-        self.cost = cost
-    
-    def __repr__(self):
-        return 'Element(item=%r, cost=%r)' % (self.item, self.cost)
-
-class NoPathException(Exception):
-    pass
 
 def dijkstra(start, end, get_neighbors):
     """
@@ -38,6 +22,19 @@ def dijkstra(start, end, get_neighbors):
     Raises:
         NoPathException: No path found
     """
+    
+    class Element:
+        # Can't use a namedtuple because it needs to be mutable
+        def __init__(self, item, cost):
+            self.item = item
+            self.cost = cost
+        
+        def __repr__(self):
+            return 'Element(item=%r, cost=%r)' % (self.item, self.cost)
+            
+    class NoPathException(Exception):
+        pass
+    
     explored = set()
     frontier = []
     frontier.append(Element(start, 0))
@@ -73,6 +70,9 @@ def dijkstra(start, end, get_neighbors):
                     frontier.append(Element(neighbor.finish, total_neighbor_cost))
                     parents[neighbor.finish] = current_node.item
 
+
+Edge = namedtuple('Edge', ['start', 'finish', 'cost'])
+
 class Graph:
     
     def __init__(self):
@@ -93,8 +93,10 @@ class Graph:
     def get_neighbors(self, current_node):
         yield from {e for e in self.edges if e.start == current_node}
 
+
+
 FIELD = """\
-ooooooooooooeo
+ooooooooooeooo
 xxxxoooooooooo
 ooooooxxooxxxx
 xxoxxooooooooo
@@ -114,32 +116,63 @@ class Field:
         raise ValueError("%r not in Field" % char)
         
     def get_neighbors(self, node):
-        pass
+        row, column = node
+        neighbors = []
+        # get possible neighbors
+        for r in (row - 1, row, row + 1):
+            for c in (column - 1, column, column + 1):
+                # make sure everything is in bounds
+                if (r, c) != (row, column) and r >= 0 and c >= 0:
+                    try:
+                        value = self.field[r][c]
+                    except IndexError:
+                        continue
+                    else:
+                        # make sure nothing is in the way
+                        if value != 'x':
+                            # get the cost and add to neighbors
+                        
+                            # the diagonal positions are the rows and columns
+                            # shifted by two and the 't' positions are shifted
+                            # by one. Summing everything and dividing by two
+                            # is an easy check for both cases
+                            if (abs(r + row + c + column) % 2 == 0):
+                                cost = 1.4 # diagonal
+                            else:
+                                cost = 1 # 't'
+                            neighbors.append(Edge(None, (r, c), cost))
+        return neighbors
     
-    def modify(self, *args):
+    def modify(self, *nodes):
         """turn (row, column) to 'p'"""
-        pass
+        for node in nodes:
+            row, column = node
+            self.field[row] = self.field[row][:column] + 'p' + self.field[row][column + 1:]
     
     def __str__(self):
-        pass
+        # replace all but outer 'o's with spaces
+        return '\n'.join(self.field)
     
-def main():
-    g = Graph()
+
+g = Graph()
+
+g.add_two_way('1', '2', 7)
+g.add_two_way('1', '3', 9)
+g.add_two_way('1', '6', 14)
+g.add_two_way('2', '3', 10)
+g.add_two_way('2', '4', 15)
+g.add_two_way('3', '4', 11)
+g.add_two_way('3', '6', 2)
+g.add_two_way('4', '5', 6)
+g.add_two_way('5', '6', 9)
     
-    g.add_two_way('1', '2', 7)
-    g.add_two_way('1', '3', 9)
-    g.add_two_way('1', '6', 14)
-    g.add_two_way('2', '3', 10)
-    g.add_two_way('2', '4', 15)
-    g.add_two_way('3', '4', 11)
-    g.add_two_way('3', '6', 2)
-    g.add_two_way('4', '5', 6)
-    g.add_two_way('5', '6', 9)
-        
-    print(dijkstra('1', '5', g.get_neighbors))
-    
-    f = Field(FIELD)
-    print(f.field)
-    print(f.get_location('s'))
-if __name__ == '__main__':
-    main()
+print(dijkstra('1', '5', g.get_neighbors))
+
+f = Field(FIELD)
+print(f)
+start = f.get_location('s')
+end = f.get_location('e')
+path = dijkstra(start, end, f.get_neighbors)
+print(path)
+f.modify(*path[1:-1])
+print(f)
