@@ -19,15 +19,6 @@ std::string make_string(T value)
     return ss.str();
 }
 
-std::string make_string(std::set<NodeType> s)
-{
-    std::string str = "";
-    for (auto e : s)
-    {
-        str += make_string(e);
-    }
-    return str;
-}
 
 struct Element
 {
@@ -93,7 +84,7 @@ struct Graph
     }
 };
 
-std::map<NodeType, NodeType> dijkstra(NodeType start, NodeType end, Graph g)
+std::vector<NodeType> dijkstra(NodeType start, NodeType end, Graph g)
 {
     std::set<NodeType> explored;
     std::vector<Element> frontier;
@@ -115,10 +106,21 @@ std::map<NodeType, NodeType> dijkstra(NodeType start, NodeType end, Graph g)
 
         Element current_node = frontier.back();
         frontier.pop_back();
-        std::cout << current_node.node << " " << current_node.cost << std::endl;
+        //std::cout << current_node.node << " " << current_node.cost << std::endl;
         if (current_node.node == end)
         {
-            return parents;
+            std::vector<NodeType> path;
+            NodeType current = end;
+            path.push_back(current);
+            auto parent_it = parents.find(current);
+            while (parent_it != parents.end())
+            {
+                current = parent_it->second;
+                path.push_back(current);
+                parent_it = parents.find(current);
+            }
+            std::reverse(std::begin(path), std::end(path));
+            return path;
         }
 
         explored.insert(current_node.node);
@@ -127,7 +129,7 @@ std::map<NodeType, NodeType> dijkstra(NodeType start, NodeType end, Graph g)
         auto neighbors = g.get_neighbors(current_node.node);
         for (auto neighbor : neighbors)
         {
-            std::cout << "neighbor: " << neighbor.node << " " << neighbor.cost << std::endl;
+            //std::cout << "neighbor: " << neighbor.node << " " << neighbor.cost << std::endl;
             CostType total_neighbor_cost = current_node.cost + neighbor.cost;
 
             if (explored.count(neighbor.node) == 0)
@@ -156,15 +158,8 @@ std::map<NodeType, NodeType> dijkstra(NodeType start, NodeType end, Graph g)
     }
 }
 
-void pause()
-{
-    system("pause");
-}
-
 int main()
 {
-    std::atexit(pause);
-
     auto g = Graph();
 
     g.add_two_way('1', '2', 7);
@@ -177,36 +172,18 @@ int main()
     g.add_two_way('4', '5', 6);
     g.add_two_way('5', '6', 9);
 
+    std::vector<NodeType> path;
     try
     {
-        auto parents = dijkstra('1', '5', g);
-        for (auto n : parents)
-        {
-            std::cout << n.first << "->" << n.second << std::endl;
-        }
-        std::cout << std::endl;
-
-        std::vector<NodeType> path;
-        NodeType current = '5';
-        path.push_back(current);
-        auto parent_it = parents.find(current);
-        while (parent_it != parents.end())
-        {
-            current = parent_it->second;
-            std::cout << "current " << current << std::endl;
-            path.push_back(current);
-            parent_it = parents.find(current);
-        }
-
-        std::reverse(std::begin(path), std::end(path));
-        for (auto p : path)
-        {
-            std::cout << make_string(p) << " ";
-        }
-        std::cout << std::endl;
+        path = dijkstra('1', '5', g);
     }
     catch (const std::invalid_argument& e)
     {
         std::cout << e.what() << std::endl;
     }
+    for (auto n : path)
+    {
+        std::cout << make_string(n) << " ";
+    }
+    std::cout << std::endl;
 }
