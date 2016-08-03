@@ -12,6 +12,7 @@ project(_Algorithms)
 # find_package(Boost REQUIRED)
 # include_directories(${Boost_INCLUDE_DIR})
 
+# So far this is fmtlib
 add_subdirectory(${CMAKE_SOURCE_DIR}/lib)
 
 # add warnings to all projects
@@ -58,3 +59,4 @@ function(add_proj name)
 endfunction()
 
 add_proj(Dijkstra main.cpp)
+add_proj(tmp main.cpp)
