@@ -57,6 +57,4 @@ function(add_proj name)
     target_link_libraries(${name} fmtlib)
 endfunction()
 
-add_proj(Dijkstra1 main.cpp)
-add_proj(Dijkstra2 main.cpp)
-add_proj(Dijkstra3 main.cpp)
+add_proj(Dijkstra main.cpp)

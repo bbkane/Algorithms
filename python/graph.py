@@ -46,7 +46,9 @@ def dijkstra(start, end, get_neighbors):
         frontier.sort(key = lambda e: e.cost)
         # pop the first element
         current_node = frontier.pop(0)
+        print(current_node.item, current_node.cost)
         if current_node.item == end: # We're done. Get the path and return
+#            return parents; # TODO: rm   
             path = []
             current = end
             while parents[current]:
@@ -58,6 +60,7 @@ def dijkstra(start, end, get_neighbors):
         explored.add(current_node.item)
         node_edges = get_neighbors(current_node.item)
         for neighbor in node_edges:
+            print("neighbor:", neighbor.finish, neighbor.cost)
             total_neighbor_cost = neighbor.cost + current_node.cost
             if neighbor.finish not in explored:
                 for element in frontier:
@@ -102,6 +105,15 @@ ooooooxxooxxxx
 xxoxxooooooooo
 ooooxooooooooo
 osoooooooooooo
+"""
+
+FIELD2 = """\
+oooooooooooooo
+oooooooooooooo
+ooooooxxooxxxx
+ooooooxooooooo
+xxxxxoxoxooooo
+osooooxooooeoo
 """
 class Field:
     
@@ -168,11 +180,12 @@ g.add_two_way('5', '6', 9)
     
 print(dijkstra('1', '5', g.get_neighbors))
 
-f = Field(FIELD)
-print(f)
-start = f.get_location('s')
-end = f.get_location('e')
-path = dijkstra(start, end, f.get_neighbors)
-print(path)
-f.modify(*path[1:-1])
-print(f)
+#print(list(g.get_neighbors('2')))
+#f = Field(FIELD2)
+#print(f)
+#start = f.get_location('s')
+#end = f.get_location('e')
+#path = dijkstra(start, end, f.get_neighbors)
+#print(path)
+#f.modify(*path[1:-1])
+#print(f)
