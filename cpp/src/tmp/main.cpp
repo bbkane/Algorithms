@@ -26,7 +26,7 @@ std::ostream& operator<<(std::ostream& os, const Element& e)
     return os << "Element(node=" << e.node << ", cost=" << e.cost << ")";
 }
 
-template <typename Func> // Func (NodeType) -> iterable of Element(CostType cost, NodeType node).
+template <typename Func> // Func (NodeType) -> IterableType<Element(CostType cost, NodeType node)>.
 void dijkstra_shim(Func f)
 {
     NodeType a = 'a';

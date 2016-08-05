@@ -84,7 +84,10 @@ struct Graph
     }
 };
 
-std::vector<NodeType> dijkstra(NodeType start, NodeType end, Graph g)
+// SuccessFunc (NodeType) -> bool
+// GetNeighborsFunc (NodeType) -> IterableType<Element(CostType cost, NodeType node)>
+template <typename SuccessFunc, typename GetNeighborsFunc>
+std::vector<NodeType> dijkstra(NodeType start, SuccessFunc success, GetNeighborsFunc get_neighbors)
 {
     std::set<NodeType> explored;
     std::vector<Element> frontier;
@@ -107,10 +110,10 @@ std::vector<NodeType> dijkstra(NodeType start, NodeType end, Graph g)
         Element current_node = frontier.back();
         frontier.pop_back();
         //std::cout << current_node.node << " " << current_node.cost << std::endl;
-        if (current_node.node == end)
+        if (success(current_node.node))
         {
             std::vector<NodeType> path;
-            NodeType current = end;
+            NodeType current = current_node.node;
             path.push_back(current);
             auto parent_it = parents.find(current);
             while (parent_it != parents.end())
@@ -125,8 +128,7 @@ std::vector<NodeType> dijkstra(NodeType start, NodeType end, Graph g)
 
         explored.insert(current_node.node);
 
-        // TODO: use lambda for this!
-        auto neighbors = g.get_neighbors(current_node.node);
+        auto neighbors = get_neighbors(current_node.node);
         for (auto neighbor : neighbors)
         {
             //std::cout << "neighbor: " << neighbor.node << " " << neighbor.cost << std::endl;
@@ -175,7 +177,7 @@ int main()
     std::vector<NodeType> path;
     try
     {
-        path = dijkstra('1', '5', g);
+        path = dijkstra('1', [](auto node) {return node == '5'; }, [&g](auto node) { return g.get_neighbors(node); });
     }
     catch (const std::invalid_argument& e)
     {
