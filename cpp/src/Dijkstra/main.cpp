@@ -5,6 +5,7 @@
 #include <set>
 #include <map>
 #include <algorithm>
+#include <stdexcept>
 
 using CostType = int;
 using NodeType = char;
@@ -18,7 +19,14 @@ std::string make_string(T value)
     return ss.str();
 }
 
+std::string make_string(std::tuple<int, int> pos)
+{
+    std::stringstream ss;
+    ss << std::get<0>(pos) << " " << std::get<1>(pos);
+    return ss.str();
+}
 
+// This is for Dijkstra
 struct Element
 {
     NodeType node;
@@ -83,10 +91,48 @@ struct Graph
     }
 };
 
+struct Field
+{
+    std::vector<std::string> field{
+        "oooooooooooooo",
+        "oooooooooooooo",
+        "ooooooxxooxxxx",
+        "ooooooxooooooo",
+        "xxxxxoxoxooooo",
+        "osooooxooooeoo" };
+
+    std::tuple<int, int> get_location(char symbol)
+    {
+        for (auto row_num = 0; row_num < (int)field.size(); ++row_num)
+        {
+            for (auto col_num = 0; col_num < (int)field[row_num].size(); ++col_num)
+            {
+                if (field[row_num][col_num] == symbol)
+                {
+                    return std::make_tuple(row_num, col_num);
+                }
+            }
+        }
+        throw std::range_error((std::string(1, symbol) + " not found!").c_str());
+    }
+
+    std::string to_string() const
+    {
+        std::string str;
+        for (auto s : field)
+        {
+            str += s + "\n";
+        }
+        return str;
+    }
+};
+
 // SuccessFunc (NodeType) -> bool
 // GetNeighborsFunc (NodeType) -> IterableType<Element(CostType cost, NodeType node)>
-template <typename SuccessFunc, typename GetNeighborsFunc>
-std::vector<NodeType> dijkstra(NodeType start, SuccessFunc success, GetNeighborsFunc get_neighbors)
+// HeuristicFunc (NodeType a) -> CostType
+template <typename SuccessFunc, typename GetNeighborsFunc, typename HeuristicFunc>
+std::vector<NodeType> dijkstra(NodeType start, SuccessFunc success, 
+                               GetNeighborsFunc get_neighbors, HeuristicFunc heuristic)
 {
     std::set<NodeType> explored;
     std::vector<Element> frontier;
@@ -132,7 +178,7 @@ std::vector<NodeType> dijkstra(NodeType start, SuccessFunc success, GetNeighbors
         for (auto neighbor : neighbors)
         {
             //std::cout << "neighbor: " << neighbor.node << " " << neighbor.cost << std::endl;
-            auto total_neighbor_cost = current_node.cost + neighbor.cost;
+            auto total_neighbor_cost = current_node.cost + neighbor.cost + heuristic(neighbor.node);
 
             if (explored.count(neighbor.node) == 0)
             {
@@ -162,6 +208,22 @@ std::vector<NodeType> dijkstra(NodeType start, SuccessFunc success, GetNeighbors
 
 int main()
 {
+    try
+    {
+        auto f = Field();
+        std::cout << f.to_string() << std::endl;
+        auto pos = f.get_location('s');
+        std::cout << make_string(pos) << std::endl;
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
+}
+
+int oldmain()
+{
+    return 0;
     auto g = Graph();
 
     g.add_two_way('1', '2', 7);
@@ -176,8 +238,10 @@ int main()
 
     std::vector<NodeType> path;
 
-    path = dijkstra('1', [](auto node) {return node == '6'; },
-                    [&g](auto node) { return g.get_neighbors(node); });
+    path = dijkstra('1', 
+        [](auto node) {return node == '6'; },
+        [&g](auto node) { return g.get_neighbors(node); },
+        [](auto node) { return 0; });
 
     for (auto n : path)
     {
