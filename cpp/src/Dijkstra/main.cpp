@@ -4,7 +4,6 @@
 #include <sstream>
 #include <set>
 #include <map>
-#include <stdexcept>
 #include <algorithm>
 
 using CostType = int;
@@ -99,7 +98,8 @@ std::vector<NodeType> dijkstra(NodeType start, SuccessFunc success, GetNeighbors
     {
         if (frontier.empty())
         {
-            throw std::invalid_argument("Frontier empty!");
+            //an empty vector is failure here
+            return std::vector<NodeType>();
         }
 
         // We need the cheapest thing at the back because vector has
@@ -132,7 +132,7 @@ std::vector<NodeType> dijkstra(NodeType start, SuccessFunc success, GetNeighbors
         for (auto neighbor : neighbors)
         {
             //std::cout << "neighbor: " << neighbor.node << " " << neighbor.cost << std::endl;
-            CostType total_neighbor_cost = current_node.cost + neighbor.cost;
+            auto total_neighbor_cost = current_node.cost + neighbor.cost;
 
             if (explored.count(neighbor.node) == 0)
             {
@@ -175,14 +175,10 @@ int main()
     g.add_two_way('5', '6', 9);
 
     std::vector<NodeType> path;
-    try
-    {
-        path = dijkstra('1', [](auto node) {return node == '5'; }, [&g](auto node) { return g.get_neighbors(node); });
-    }
-    catch (const std::invalid_argument& e)
-    {
-        std::cout << e.what() << std::endl;
-    }
+
+    path = dijkstra('1', [](auto node) {return node == '6'; },
+                    [&g](auto node) { return g.get_neighbors(node); });
+
     for (auto n : path)
     {
         std::cout << make_string(n) << " ";
