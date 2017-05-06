@@ -30,3 +30,5 @@
 bin/
 build/
 doc/
+# Stupid VS Generates this
+Win32/

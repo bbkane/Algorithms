@@ -6,15 +6,6 @@ cmake_minimum_required(VERSION 3.0)
 # Prefix with underscore for easy finding :)
 project(_Algorithms)
 
-# # Boost :)
-# set(Boost_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/lib/boost_1_59_0)
-# set(Boost_LIBRARY_DIR ${CMAKE_SOURCE_DIR}/lib/boost_1_59_0/stage/lib)
-# find_package(Boost REQUIRED)
-# include_directories(${Boost_INCLUDE_DIR})
-
-# So far this is fmtlib
-add_subdirectory(${CMAKE_SOURCE_DIR}/lib)
-
 # add warnings to all projects
 if(MSVC)
     add_compile_options(/W4 /wd4100)
@@ -52,10 +43,7 @@ function(add_proj name)
     endforeach()
     create_unmade(${Files_To_Make})
     source_group(${name}_Files FILES ${Files_To_Make})
-    include_directories(${fmtlib_SOURCE_DIR})
     add_executable(${name} ${Files_To_Make})
-    # target_link_libraries(${name} ${Boost_Libraries})
-    target_link_libraries(${name} fmtlib)
 endfunction()
 
 add_proj(Dijkstra main.cpp)
