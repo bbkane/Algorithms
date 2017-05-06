@@ -15,7 +15,7 @@ def dijkstra(start, end, get_neighbors):
         end (node): end node
         node (type): must implement __hash__, __eq__, __str__
         get_neighbors(node) -> iterable of classes which have a cost: number member
-            and a finish: node member
+            and a finish: node member (like the Edge namedtuple)
 
     Returns:
         [node]: list of the nodes from start to finish (shortest path)
@@ -47,7 +47,7 @@ def dijkstra(start, end, get_neighbors):
         frontier.sort(key=lambda e: e.cost)
         # pop the first element
         current_node = frontier.pop(0)
-        print(current_node.item, current_node.cost)
+        # print(current_node.item, current_node.cost)
         if current_node.item == end:  # We're done. Get the path and return
             path = []
             while current_node.parent:
@@ -59,9 +59,11 @@ def dijkstra(start, end, get_neighbors):
         explored.add(current_node.item)
         node_edges = get_neighbors(current_node.item)
         for neighbor in node_edges:
-            print("neighbor:", neighbor.finish, neighbor.cost)
+            # print("neighbor:", neighbor.finish, neighbor.cost)
             total_neighbor_cost = neighbor.cost + current_node.cost
             if neighbor.finish not in explored:
+                # Note: this only really works because I'm not getting the same neighbor
+                # twice. Otherwise, I would have to re-sort the frontier
                 for element in frontier:
                     if element.item == neighbor.finish:
                         if element.cost > total_neighbor_cost:
@@ -69,9 +71,8 @@ def dijkstra(start, end, get_neighbors):
                             element.parent = current_node
                         break
                 else:  # no break (the item wasn't in the frontier)
-                    e = Element(neighbor.finish, total_neighbor_cost)
+                    e = Element(neighbor.finish, total_neighbor_cost, parent=current_node)
                     frontier.append(e)
-                    e.parent = current_node
 
 
 Edge = namedtuple('Edge', ['start', 'finish', 'cost'])
@@ -112,7 +113,7 @@ oooooooooooooo
 oooooooooooooo
 ooooooxxooxxxx
 ooooooxooooooo
-xxxxxoxoxooooo
+xxxxxoxoxxxxoo
 osooooxooooeoo
 """
 
@@ -164,8 +165,10 @@ class Field:
             self.field[row] = self.field[row][:column] + 'p' + self.field[row][column + 1:]
 
     def __str__(self):
-        # replace all but outer 'o's with spaces
-        return '\n'.join(self.field)
+        # replace  'o's with spaces and add some boundaries
+        boundary = ' ' + '-' * len(self.field[0])
+        field = '\n'.join('|' + f.replace('o', ' ') + '|' for f in self.field)
+        return boundary + '\n' + field + '\n' + boundary
 
 
 def test_graph():
@@ -186,14 +189,14 @@ def test_graph():
 
 def test_field():
     f = Field(FIELD2)
-    print(f)
     start = f.get_location('s')
     end = f.get_location('e')
     path = dijkstra(start, end, f.get_neighbors)
-    print(path)
+    # print(path)
     f.modify(*path)
     print(f)
 
 
 if __name__ == "__main__":
     test_graph()
+    test_field()
