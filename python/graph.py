@@ -26,9 +26,10 @@ def dijkstra(start, end, get_neighbors):
 
     class Element:
         # Can't use a namedtuple because it needs to be mutable
-        def __init__(self, item, cost):
+        def __init__(self, item, cost, parent=None):
             self.item = item
             self.cost = cost
+            self.parent = parent
 
         def __repr__(self):
             return 'Element(item=%r, cost=%r)' % (self.item, self.cost)
@@ -39,7 +40,6 @@ def dijkstra(start, end, get_neighbors):
     explored = set()
     frontier = []
     frontier.append(Element(start, 0))
-    parents = {start: None}
     while True:
         if not frontier:
             raise NoPathException(str(start))
@@ -50,11 +50,10 @@ def dijkstra(start, end, get_neighbors):
         print(current_node.item, current_node.cost)
         if current_node.item == end:  # We're done. Get the path and return
             path = []
-            current = end
-            while parents[current]:
-                path.append(current)
-                current = parents[current]
-            path.append(current)
+            while current_node.parent:
+                path.append(current_node.item)
+                current_node = current_node.parent
+            path.append(current_node.item)
             path.reverse()
             return path
         explored.add(current_node.item)
@@ -67,11 +66,12 @@ def dijkstra(start, end, get_neighbors):
                     if element.item == neighbor.finish:
                         if element.cost > total_neighbor_cost:
                             element.cost = total_neighbor_cost
-                            parents[element.item] = current_node.item
+                            element.parent = current_node
                         break
                 else:  # no break (the item wasn't in the frontier)
-                    frontier.append(Element(neighbor.finish, total_neighbor_cost))
-                    parents[neighbor.finish] = current_node.item
+                    e = Element(neighbor.finish, total_neighbor_cost)
+                    frontier.append(e)
+                    e.parent = current_node
 
 
 Edge = namedtuple('Edge', ['start', 'finish', 'cost'])
@@ -196,4 +196,4 @@ def test_field():
 
 
 if __name__ == "__main__":
-    test_field()
+    test_graph()
