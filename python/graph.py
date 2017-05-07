@@ -80,7 +80,7 @@ def dijkstra(start_value, end_value, get_neighbors):
                     frontier.append(e)
 
 
-Edge = namedtuple('Edge', ['from_value', 'to_value', 'cost'])
+GraphEdge = namedtuple('Edge', ['from_value', 'to_value', 'cost'])
 
 
 class Graph:
@@ -89,8 +89,8 @@ class Graph:
         self.edges = set()
 
     def add_two_way(self, a, b, cost):
-        self.edges.add(Edge(b, a, cost))
-        self.edges.add(Edge(a, b, cost))
+        self.edges.add(GraphEdge(b, a, cost))
+        self.edges.add(GraphEdge(a, b, cost))
 
     def __str__(self):
         edge_str = 'edges:\n' + '\n'.join(str(edge) for edge in self.edges)
@@ -159,7 +159,7 @@ class Field:
 
                             # This is a bit of a hack because I don't need a from_value
                             # in the actual algorithm
-                            neighbors.append(Edge(None, (r, c), cost))
+                            neighbors.append(GraphEdge(None, (r, c), cost))
         return neighbors
 
     def modify(self, *nodes):
