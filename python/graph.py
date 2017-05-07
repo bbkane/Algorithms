@@ -59,44 +59,40 @@ def dijkstra(start, end, get_neighbors):
         explored.add(current_node.item)
         node_edges = get_neighbors(current_node.item)
         for neighbor in node_edges:
-            # print("neighbor:", neighbor.finish, neighbor.cost)
+            # print("neighbor:", neighbor.to_value, neighbor.cost)
             total_neighbor_cost = neighbor.cost + current_node.cost
-            if neighbor.finish not in explored:
+            if neighbor.to_value not in explored:
                 # Note: this only really works because I'm not getting the same neighbor
                 # twice. Otherwise, I would have to re-sort the frontier
                 for element in frontier:
-                    if element.item == neighbor.finish:
+                    if element.item == neighbor.to_value:
                         if element.cost > total_neighbor_cost:
                             element.cost = total_neighbor_cost
                             element.parent = current_node
                         break
                 else:  # no break (the item wasn't in the frontier)
-                    e = Element(neighbor.finish, total_neighbor_cost, parent=current_node)
+                    e = Element(neighbor.to_value, total_neighbor_cost, parent=current_node)
                     frontier.append(e)
 
 
-Edge = namedtuple('Edge', ['start', 'finish', 'cost'])
+Edge = namedtuple('Edge', ['from_value', 'to_value', 'cost'])
 
 
 class Graph:
 
     def __init__(self):
-        self.nodes = set()
         self.edges = set()
 
     def add_two_way(self, a, b, cost):
-        self.nodes.add(a)
-        self.nodes.add(b)
         self.edges.add(Edge(b, a, cost))
         self.edges.add(Edge(a, b, cost))
 
     def __str__(self):
-        node_str = 'nodes:\n' + '\n'.join(str(node) for node in self.nodes)
         edge_str = 'edges:\n' + '\n'.join(str(edge) for edge in self.edges)
-        return node_str + '\n' + edge_str
+        return '\n' + edge_str
 
-    def get_neighbors(self, current_node):
-        yield from {e for e in self.edges if e.start == current_node}
+    def get_neighbors(self, current_value):
+        yield from {e for e in self.edges if e.from_value == current_value}
 
 
 FIELD = """\
@@ -155,6 +151,9 @@ class Field:
                                 cost = 1.4  # diagonal
                             else:
                                 cost = 1  # 't'
+
+                            # This is a bit of a hack because I don't need a from_value
+                            # in the actual algorithm
                             neighbors.append(Edge(None, (r, c), cost))
         return neighbors
 
@@ -184,6 +183,7 @@ def test_graph():
     g.add_two_way('4', '5', 6)
     g.add_two_way('5', '6', 9)
 
+    print(g)
     print(dijkstra('1', '5', g.get_neighbors))
 
 
