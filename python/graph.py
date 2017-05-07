@@ -80,10 +80,26 @@ def dijkstra(start_value, end_value, get_neighbors):
                     frontier.append(e)
 
 
+Neighbor = namedtuple('Neigbor', ['value', 'cost'])
+
+
+class GraphIterator:
+    """Iterate over a graph
+
+    This is the interface consumed by dijkstra.
+
+    Methods:
+        The end_value is for A* so I can call a heuristic!
+        __init__(G, end_value)
+        get_neighbors(value) -> Iterable[Neighbor]
+    """
+    pass
+
+
 GraphEdge = namedtuple('Edge', ['from_value', 'to_value', 'cost'])
 
 
-class Graph:
+class EdgeGraph:
 
     def __init__(self):
         self.edges = set()
@@ -100,26 +116,7 @@ class Graph:
         yield from {e for e in self.edges if e.from_value == current_value}
 
 
-FIELD = """\
-ooooooooooeooo
-xxxxoooooooooo
-ooooooxxooxxxx
-xxoxxooooooooo
-ooooxooooooooo
-osoooooooooooo
-"""
-
-FIELD2 = """\
-oooooooooooooo
-oooooooooooooo
-ooooooxxooxxxx
-ooooooxooooooo
-xxxxxoxoxxxxoo
-osooooxooooeoo
-"""
-
-
-class Field:
+class FieldGraph:
 
     def __init__(self, field):
         self.field = [f.strip() for f in field.strip().split('\n')]
@@ -175,8 +172,27 @@ class Field:
         return boundary + '\n' + field + '\n' + boundary
 
 
+FIELD1 = """\
+ooooooooooeooo
+xxxxoooooooooo
+ooooooxxooxxxx
+xxoxxooooooooo
+ooooxooooooooo
+osoooooooooooo
+"""
+
+FIELD2 = """\
+oooooooooooooo
+oooooooooooooo
+ooooooxxooxxxx
+ooooooxooooooo
+xxxxxoxoxxxxoo
+osooooxooooeoo
+"""
+
+
 def test_graph():
-    g = Graph()
+    g = EdgeGraph()
 
     g.add_two_way('1', '2', 7)
     g.add_two_way('1', '3', 9)
@@ -192,16 +208,17 @@ def test_graph():
     print(dijkstra('1', '5', g.get_neighbors))
 
 
-def test_field():
-    f = Field(FIELD2)
+def test_field(field):
+    f = FieldGraph(field)
     start = f.get_location('s')
     end = f.get_location('e')
     path = dijkstra(start, end, f.get_neighbors)
     # print(path)
-    f.modify(*path)
+    f.modify(*path[1:-1])
     print(f)
 
 
 if __name__ == "__main__":
     test_graph()
-    test_field()
+    test_field(FIELD1)
+    test_field(FIELD2)
