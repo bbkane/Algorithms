@@ -27,13 +27,12 @@ class MSPNode:
         return 'Element(value=%r, cost=%r)' % (self.value, self.cost)
 
 
-def dijkstra(start_value, end_value, get_neighbors):
+def dijkstra(start_value, end_value, graph_iterator):
     """
     Args:
         start_value, end_value
         type value must implement __hash__, __eq__, __str__
-        get_neighbors(node) -> iterable of classes which have a cost: number member
-            and a to_value: node member (like the Edge namedtuple)
+        graph_iterator: GraphIterator
 
     Returns:
         [node]: list of the nodes from start to finish (shortest path)
@@ -62,7 +61,7 @@ def dijkstra(start_value, end_value, get_neighbors):
             path.reverse()
             return path
         explored.add(current_node.value)
-        node_edges = get_neighbors(current_node.value)
+        node_edges = graph_iterator.get_neighbors(current_node.value)
         for neighbor in node_edges:
             # print("neighbor:", neighbor.to_value, neighbor.cost)
             total_neighbor_cost = neighbor.cost + current_node.cost
@@ -80,18 +79,20 @@ def dijkstra(start_value, end_value, get_neighbors):
                     frontier.append(e)
 
 
-Neighbor = namedtuple('Neigbor', ['value', 'cost'])
+GraphNeighbor = namedtuple('Neigbor', ['value', 'cost'])
 
 
+# Note: is this really necessary? I need a consistent interface for dijkstra,
+# and I can imagine wanting state of its own, but this might be boilerplate
 class GraphIterator:
     """Iterate over a graph
 
     This is the interface consumed by dijkstra.
 
     Methods:
-        The end_value is for A* so I can call a heuristic!
-        __init__(G, end_value)
-        get_neighbors(value) -> Iterable[Neighbor]
+        The end_value is for A* so I can call a heuristic if I want to
+        __init__(self, graph, end_value=None)
+        get_neighbors(self, value) -> Iterable[GraphNeighbor]
     """
     pass
 
@@ -113,7 +114,16 @@ class EdgeGraph:
         return '\n' + edge_str
 
     def get_neighbors(self, current_value):
-        yield from {e for e in self.edges if e.from_value == current_value}
+        yield from (e for e in self.edges if e.from_value == current_value)
+
+
+class EdgeGraphIterator:
+
+    def __init__(self, graph, end_value=None):
+        self.graph = graph
+
+    def get_neighbors(self, value):
+        return self.graph.get_neighbors(value)
 
 
 class FieldGraph:
@@ -172,6 +182,15 @@ class FieldGraph:
         return boundary + '\n' + field + '\n' + boundary
 
 
+class FieldGraphIterator:
+
+    def __init__(self, field, end_value=None):
+        self.field = field
+
+    def get_neighbors(self, value):
+        return self.field.get_neighbors(value)
+
+
 FIELD1 = """\
 ooooooooooeooo
 xxxxoooooooooo
@@ -193,7 +212,7 @@ osooooxooooeoo
 
 def test_graph():
     g = EdgeGraph()
-
+    gi = EdgeGraphIterator(g)
     g.add_two_way('1', '2', 7)
     g.add_two_way('1', '3', 9)
     g.add_two_way('1', '6', 14)
@@ -205,14 +224,15 @@ def test_graph():
     g.add_two_way('5', '6', 9)
 
     print(g)
-    print(dijkstra('1', '5', g.get_neighbors))
+    print(dijkstra('1', '5', gi))
 
 
 def test_field(field):
     f = FieldGraph(field)
+    fi = FieldGraphIterator(f)
     start = f.get_location('s')
     end = f.get_location('e')
-    path = dijkstra(start, end, f.get_neighbors)
+    path = dijkstra(start, end, fi)
     # print(path)
     f.modify(*path[1:-1])
     print(f)
