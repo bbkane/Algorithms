@@ -65,20 +65,21 @@ def dijkstra(start_value, end_value, graph_iterator):
         for neighbor in node_edges:
             # print("neighbor:", neighbor.to_value, neighbor.cost)
             total_neighbor_cost = neighbor.cost + current_node.cost
-            if neighbor.to_value not in explored:
+            if neighbor.value not in explored:
                 # Note: this only really works because I'm not getting the same neighbor
                 # twice. Otherwise, I would have to re-sort the frontier
                 for element in frontier:
-                    if element.value == neighbor.to_value:
+                    if element.value == neighbor.value:
                         if element.cost > total_neighbor_cost:
                             element.cost = total_neighbor_cost
                             element.parent = current_node
                         break
                 else:  # no break (the value wasn't in the frontier)
-                    e = MSPNode(neighbor.to_value, total_neighbor_cost, parent=current_node)
+                    e = MSPNode(neighbor.value, total_neighbor_cost, parent=current_node)
                     frontier.append(e)
 
 
+# For use in GraphIterator. Consumed by djikstra
 GraphNeighbor = namedtuple('Neigbor', ['value', 'cost'])
 
 
@@ -123,7 +124,8 @@ class EdgeGraphIterator:
         self.graph = graph
 
     def get_neighbors(self, value):
-        return self.graph.get_neighbors(value)
+        yield from (GraphNeighbor(n.to_value, n.cost)
+                    for n in self.graph.get_neighbors(value))
 
 
 class FieldGraph:
@@ -188,7 +190,8 @@ class FieldGraphIterator:
         self.field = field
 
     def get_neighbors(self, value):
-        return self.field.get_neighbors(value)
+        yield from (GraphNeighbor(n.to_value, n.cost)
+                    for n in self.field.get_neighbors(value))
 
 
 FIELD1 = """\
