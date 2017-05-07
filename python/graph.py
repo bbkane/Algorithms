@@ -8,14 +8,32 @@ Created on Mon Jul 11 21:32:46 2016
 from collections import namedtuple
 
 
-def dijkstra(start, end, get_neighbors):
+class NoPathException(Exception):
+    pass
+
+
+# TODO: Can I combine this and the Edge class?
+# NOTE: This is only used in dijkstra()
+class MSPNode:
+    """Minimum Spanning Tree Node"""
+
+    # Can't use a namedtuple because it needs to be mutable
+    def __init__(self, value, cost, parent=None):
+        self.value = value
+        self.cost = cost
+        self.parent = parent
+
+    def __repr__(self):
+        return 'Element(value=%r, cost=%r)' % (self.value, self.cost)
+
+
+def dijkstra(start_value, end_value, get_neighbors):
     """
     Args:
-        start (node): start node
-        end (node): end node
-        node (type): must implement __hash__, __eq__, __str__
+        start_value, end_value
+        type value must implement __hash__, __eq__, __str__
         get_neighbors(node) -> iterable of classes which have a cost: number member
-            and a finish: node member (like the Edge namedtuple)
+            and a to_value: node member (like the Edge namedtuple)
 
     Returns:
         [node]: list of the nodes from start to finish (shortest path)
@@ -24,40 +42,27 @@ def dijkstra(start, end, get_neighbors):
         NoPathException: No path found
     """
 
-    class Element:
-        # Can't use a namedtuple because it needs to be mutable
-        def __init__(self, item, cost, parent=None):
-            self.item = item
-            self.cost = cost
-            self.parent = parent
-
-        def __repr__(self):
-            return 'Element(item=%r, cost=%r)' % (self.item, self.cost)
-
-    class NoPathException(Exception):
-        pass
-
     explored = set()
     frontier = []
-    frontier.append(Element(start, 0))
+    frontier.append(MSPNode(start_value, 0))
     while True:
         if not frontier:
-            raise NoPathException(str(start))
+            raise NoPathException(str(start_value))
         # treat the list like a priority queue by sorting it by cost
         frontier.sort(key=lambda e: e.cost)
         # pop the first element
         current_node = frontier.pop(0)
-        # print(current_node.item, current_node.cost)
-        if current_node.item == end:  # We're done. Get the path and return
+        # print(current_node.value, current_node.cost)
+        if current_node.value == end_value:  # We're done. Get the path and return
             path = []
             while current_node.parent:
-                path.append(current_node.item)
+                path.append(current_node.value)
                 current_node = current_node.parent
-            path.append(current_node.item)
+            path.append(current_node.value)
             path.reverse()
             return path
-        explored.add(current_node.item)
-        node_edges = get_neighbors(current_node.item)
+        explored.add(current_node.value)
+        node_edges = get_neighbors(current_node.value)
         for neighbor in node_edges:
             # print("neighbor:", neighbor.to_value, neighbor.cost)
             total_neighbor_cost = neighbor.cost + current_node.cost
@@ -65,13 +70,13 @@ def dijkstra(start, end, get_neighbors):
                 # Note: this only really works because I'm not getting the same neighbor
                 # twice. Otherwise, I would have to re-sort the frontier
                 for element in frontier:
-                    if element.item == neighbor.to_value:
+                    if element.value == neighbor.to_value:
                         if element.cost > total_neighbor_cost:
                             element.cost = total_neighbor_cost
                             element.parent = current_node
                         break
-                else:  # no break (the item wasn't in the frontier)
-                    e = Element(neighbor.to_value, total_neighbor_cost, parent=current_node)
+                else:  # no break (the value wasn't in the frontier)
+                    e = MSPNode(neighbor.to_value, total_neighbor_cost, parent=current_node)
                     frontier.append(e)
 
 
