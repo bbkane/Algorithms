@@ -27,56 +27,73 @@ class MSPNode:
         return 'Element(value=%r, cost=%r)' % (self.value, self.cost)
 
 
-def dijkstra(start_value, end_value, graph_iterator):
-    """
-    Args:
-        start_value, end_value
-        type value must implement __hash__, __eq__, __str__
-        graph_iterator: GraphIterator
+class GraphPath:
+    """Mininum Spanning Tree"""
 
-    Returns:
-        [node]: list of the nodes from start to finish (shortest path)
+    def __init__(self):
+        self.msp = []
+        # TODO: rm this so the graph cache actuall works...
+        self.last_node = None
 
-    Raises:
-        NoPathException: No path found
-    """
+    def build_MSP(self, start_value, end_value, graph_iterator):
+        """
+        Args:
+            start_value, end_value
+            type value must implement __hash__, __eq__, __str__
+            graph_iterator: GraphIterator
 
-    explored = set()
-    frontier = []
-    frontier.append(MSPNode(start_value, 0))
-    while True:
-        if not frontier:
-            raise NoPathException(str(start_value))
-        # treat the list like a priority queue by sorting it by cost
-        frontier.sort(key=lambda e: e.cost)
-        # pop the first element
-        current_node = frontier.pop(0)
-        # print(current_node.value, current_node.cost)
-        if current_node.value == end_value:  # We're done. Get the path and return
-            path = []
-            while current_node.parent:
-                path.append(current_node.value)
-                current_node = current_node.parent
+        Returns:
+            [node]: list of the nodes from start to finish (shortest path)
+
+        Raises:
+            NoPathException: No path found
+        """
+
+        explored = set()
+        frontier = []
+        frontier.append(MSPNode(start_value, 0, parent=None))
+        while True:
+            if not frontier:
+                # TODO: move this to get_path. If we're out of nodes, we just have a complete tree
+                raise NoPathException(str(start_value))
+            # treat the list like a priority queue by sorting it by cost
+            frontier.sort(key=lambda e: e.cost)
+            # pop the first element
+            current_node = frontier.pop(0)
+            # print(current_node.value, current_node.cost)
+            explored.add(current_node.value)
+            self.msp.append(current_node)
+            self.last_node = current_node
+            if current_node.value == end_value:  # We're done. Get the path and return
+                return
+            node_edges = graph_iterator.get_neighbors(current_node.value)
+            for neighbor in node_edges:
+                # print("neighbor:", neighbor.to_value, neighbor.cost)
+                total_neighbor_cost = neighbor.cost + current_node.cost
+                if neighbor.value not in explored:
+                    # Note: this only really works because I'm not getting the same neighbor
+                    # twice. Otherwise, I would have to re-sort the frontier
+                    for element in frontier:
+                        if element.value == neighbor.value:
+                            if element.cost > total_neighbor_cost:
+                                element.cost = total_neighbor_cost
+                                element.parent = current_node
+                            # The frontier has only one of these values,
+                            # so once we find it, we can stop searching
+                            break
+                    else:  # no break (the value wasn't in the frontier)
+                        e = MSPNode(neighbor.value, total_neighbor_cost, parent=current_node)
+                        frontier.append(e)
+
+    def get_path(self):
+        path = []
+        current_node = self.last_node
+        while current_node.parent:
             path.append(current_node.value)
-            path.reverse()
-            return path
-        explored.add(current_node.value)
-        node_edges = graph_iterator.get_neighbors(current_node.value)
-        for neighbor in node_edges:
-            # print("neighbor:", neighbor.to_value, neighbor.cost)
-            total_neighbor_cost = neighbor.cost + current_node.cost
-            if neighbor.value not in explored:
-                # Note: this only really works because I'm not getting the same neighbor
-                # twice. Otherwise, I would have to re-sort the frontier
-                for element in frontier:
-                    if element.value == neighbor.value:
-                        if element.cost > total_neighbor_cost:
-                            element.cost = total_neighbor_cost
-                            element.parent = current_node
-                        break
-                else:  # no break (the value wasn't in the frontier)
-                    e = MSPNode(neighbor.value, total_neighbor_cost, parent=current_node)
-                    frontier.append(e)
+            current_node = current_node.parent
+        path.append(current_node.value)
+        path.reverse()
+        return path
 
 
 # For use in GraphIterator. Consumed by djikstra
@@ -227,7 +244,9 @@ def test_graph():
     g.add_two_way('5', '6', 9)
 
     print(g)
-    print(dijkstra('1', '5', gi))
+    gp = GraphPath()
+    gp.build_MSP('1', '5', gi)
+    print(gp.get_path())
 
 
 def test_field(field):
@@ -235,7 +254,10 @@ def test_field(field):
     fi = FieldGraphIterator(f)
     start = f.get_location('s')
     end = f.get_location('e')
-    path = dijkstra(start, end, fi)
+    gp = GraphPath()
+    gp.build_MSP(start, end, fi)
+    path = gp.get_path()
+    # path = dijkstra(start, end, fi)
     # print(path)
     f.modify(*path[1:-1])
     print(f)
