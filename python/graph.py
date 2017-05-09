@@ -6,6 +6,7 @@ Created on Mon Jul 11 21:32:46 2016
 """
 
 from collections import namedtuple
+# from pprint import pprint
 
 
 class NoPathException(Exception):
@@ -14,6 +15,8 @@ class NoPathException(Exception):
 
 # TODO: Can I combine this and the Edge class?
 # NOTE: This is only used in dijkstra()
+# TODO: Need an end value somewhere in my MSP "class" to I can see
+# it was build (especially important for A*)
 class MSPNode:
     """Minimum Spanning Tree Node"""
 
@@ -24,7 +27,13 @@ class MSPNode:
         self.parent = parent
 
     def __repr__(self):
-        return 'Element(value=%r, cost=%r)' % (self.value, self.cost)
+        # Note: this isn't really much of a repr... But I don't want to make it recursive...
+        if self.parent:
+            return 'MSPNode(value=%r, cost=%r, parent=MSPNode(%r, %r))' % \
+                (self.value, self.cost, self.parent.value, self.parent.cost)
+        else:
+            return 'MSPNode(value=%r, cost=%r, parent=%r)' % \
+                (self.value, self.cost, None)
 
 
 class GraphPath:
@@ -32,8 +41,6 @@ class GraphPath:
 
     def __init__(self):
         self.msp = []
-        # TODO: rm this so the graph cache actuall works...
-        self.last_node = None
 
     def build_MSP(self, start_value, end_value, graph_iterator):
         """
@@ -85,15 +92,28 @@ class GraphPath:
                         e = MSPNode(neighbor.value, total_neighbor_cost, parent=current_node)
                         frontier.append(e)
 
-    def get_path(self):
+    # TODO: Make rebuild the cache if it can't find the path then try again to find it
+    def get_path(self, start_value, end_value, graph_iterator):
+        if not self.msp:
+            self.build_MSP(start_value, end_value, graph_iterator)
+        # pprint(self.msp)
+        # Try to find it in the MSP
+        for node in self.msp:
+            if node.value == end_value:
+                current_node = node
+                break
+        else:  # nobreak
+            raise NoPathException(f'{repr(end_value)} not found!')
+        print(current_node)  # so this is working
         path = []
-        current_node = self.last_node
-        while current_node.parent:
+        # current_node = self.last_node
+        while current_node:  # potentially search till the end of the tree
             path.append(current_node.value)
+            if current_node.value == start_value:
+                path.reverse()
+                return path
             current_node = current_node.parent
-        path.append(current_node.value)
-        path.reverse()
-        return path
+        raise NoPathException(f'{repr(start_value)} -> {repr(end_value)} not found!')
 
 
 # For use in GraphIterator. Consumed by djikstra
@@ -245,8 +265,8 @@ def test_graph():
 
     print(g)
     gp = GraphPath()
-    gp.build_MSP('1', '5', gi)
-    print(gp.get_path())
+    # gp.build_MSP('1', '5', gi)
+    print(gp.get_path('1', '5', gi))
 
 
 def test_field(field):
@@ -255,8 +275,8 @@ def test_field(field):
     start = f.get_location('s')
     end = f.get_location('e')
     gp = GraphPath()
-    gp.build_MSP(start, end, fi)
-    path = gp.get_path()
+    # gp.build_MSP(start, end, fi)
+    path = gp.get_path(start, end, fi)
     # path = dijkstra(start, end, fi)
     # print(path)
     f.modify(*path[1:-1])
