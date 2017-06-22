@@ -48,3 +48,4 @@ endfunction()
 
 add_proj(Dijkstra main.cpp)
 add_proj(tmp main.cpp)
+add_proj(HashMap HashMap.hpp main.cpp)
