@@ -1,4 +1,4 @@
-//#include "HashMap.hpp"
+//#include "OneWayHashSet.hpp"
 
 
 // The current strategy for a fast text Markov chain implementation
@@ -32,33 +32,42 @@
 // TODO: I really think I want to call this a HashSet and use a separate array for the values
 
 // This class offers a linear probing hash map that can only be added to (I'm implementing a Markov Chain and I'm not going to need deletion)
+// It's fixed size and cannot have keys deleted from it, which means that You can get an index from an operation and that index is stable.
 template<
 	class Type,
 	size_t MaxSize,
 	class Hash = std::hash<Type>,
 	class Equal = std::equal_to<Type>
 	// TODO: class Allocator
-> struct HashMap
+> struct OneWayHashSet
 {
 	// Just in case I want to make this a parameter
 	using SizeType = std::size_t;
 
 	std::array<Type, MaxSize> data;
 	SizeType current_size;
-	std::bitset<MaxSize> initialized_data; // always initializes to 0
+	std::bitset<MaxSize> initialized_data; // always initializes to all 0's
+	Hash Hasher{};
 
-	HashMap() : current_size(0)
+	OneWayHashSet() : current_size(0)
 	{
 
 	}
 	inline auto max_size() const { return MaxSize; }
 	inline auto empty() const { return current_size == 0; }
 	inline auto full() const { return current_size == size(); }
-
+	SizeType insert(Type value)
+	{
+		return 0;
+	}
 };
 
 int main()
 {
-	HashMap<int, 5> hm;
+	OneWayHashSet<int, 5> hm;
 	std::cout << hm.max_size() << std::endl;
+	auto Hasher = std::hash<int>();
+	std::cout << Hasher(5) << std::endl;
+	std::cout << Hasher(5) << std::endl;
+	std::cout << std::hash<int>()(5) << std::endl;
 }

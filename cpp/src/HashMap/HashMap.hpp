@@ -14,10 +14,10 @@ template<
 	class Hash=std::hash<Type>,
 	class Equal=std::equal_to<Type>
 	// TODO: class Allocator
-> struct HashMap
+> struct OneWayHashSet
 {
 	//std::size_t MaxSize;
 	std::array<Type, MaxSize> Data;
-	HashMap() = default;
+	OneWayHashSet() = default;
 	inline auto size() const { return MaxSize; }
 };
