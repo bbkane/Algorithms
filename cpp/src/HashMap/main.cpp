@@ -19,14 +19,25 @@
 //   insert_and_get_index word
 //   update_previous_next_word word
 
+// New simplified algorithm:
+// Data is a array<struct<vector
+// for word in text:
+//   index = hs.insert(word)
+//   data[prev_index].count++;
+//   data[prev_index].next_words.append_once index and increase count
+//   
+
 #include <iostream>
 
 #include <array>
 #include <bitset>
 #include <cstddef>
 #include <functional>
+#include <fstream>
 #include <memory>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 // TODO: https://english.stackexchange.com/questions/395078/an-adjective-describing-a-collection-that-can-be-added-to-but-not-removed-from
 
@@ -87,6 +98,7 @@ template<
 
 	// How to exit on error here? I think I'm going to use an exception...
 	// Though I could return max_size()
+	// I don't even think I need to have this for the Markov Chain
 	SizeType find(Type value)
 	{
 		SizeType hash_value = Hasher(value);
@@ -111,13 +123,38 @@ template<
 	}
 };
 
+// this is the data attached to the next index
+struct NextData
+{
+	int count = 0;
+	size_t index;
+	NextData(size_t index, int count) : index(index), count(count) {}
+};
+
+// This is the data attached to the first index
+struct PrevData
+{
+	int count = 0;
+	std::vector<NextData> nexts; // I'm just going to linearly search this guy, though I guess I coudl make him a hashset as well
+	PrevData() = default;
+};
+
 int main()
 {
-	OneWayHashSet<int, 5> hm;
-	auto index4 = hm.insert(4);
-	std::cout << index4 << std::endl;
-	auto index5 = hm.insert(5);
-	hm.insert(0);
-	std::cout << index5 << std::endl;
-	std::cout << hm << std::endl;
+	std::ifstream fin(R"(C:\Users\Ben\Desktop\data.txt)");
+	std::string word;
+	constexpr size_t max_size = 1 << 5;
+	OneWayHashSet<std::string, max_size> hs;
+	std::array<PrevData, max_size> prev_data;
+	for (size_t i = 0; i < prev_data.size(); ++i)
+	{
+		prev_data[i] = PrevData(); // It's initialized now
+	}
+
+	fin >> word;
+	auto prev_index = hs.insert(word);
+	while (fin >> word)
+	{
+		
+	}
 }
