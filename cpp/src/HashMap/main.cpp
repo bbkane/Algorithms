@@ -26,6 +26,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 
 // TODO: https://english.stackexchange.com/questions/395078/an-adjective-describing-a-collection-that-can-be-added-to-but-not-removed-from
 
@@ -42,32 +43,81 @@ template<
 > struct OneWayHashSet
 {
 	// Just in case I want to make this a parameter
+	// This is also the output of Hash, so I'm not sure how flexible it really is
 	using SizeType = std::size_t;
 
-	std::array<Type, MaxSize> data;
-	SizeType current_size;
+	std::array<Type, MaxSize> data = { 0 };
+	SizeType current_size{ 0 };
 	std::bitset<MaxSize> initialized_data; // always initializes to all 0's
 	Hash Hasher{};
+	Equal Equaler{}; // TODO: right name?
 
-	OneWayHashSet() : current_size(0)
-	{
-
-	}
+	OneWayHashSet() = default;
+	inline auto size() const { return current_size; }
 	inline auto max_size() const { return MaxSize; }
 	inline auto empty() const { return current_size == 0; }
-	inline auto full() const { return current_size == size(); }
+	inline auto full() const { return current_size == max_size(); }
+	// inserts and returns the index inserted at
+	// TODO: Don't assume that the hash table is empty. Throw?
+	// TODO: Move semantics?
+	// this is a set, so it might not insert if the element already exists
+	// TODO: keep an array of cached hashes in case Equal is too expensive? (probably better in the general case but worse in my case)
 	SizeType insert(Type value)
 	{
+		if (full())
+		{
+			throw std::out_of_range("table full");
+		}
+		SizeType hash_value = Hasher(value);
+		hash_value %= max_size();
+		std::cout << "Hash( " << value << " ) = " << hash_value << std::endl;
+		while (initialized_data[hash_value])
+		{
+			if (Equaler(data[hash_value], value))
+			{
+				return hash_value;
+			}
+			hash_value = (hash_value + 1) % size();
+		}
+		data[hash_value] = value;
+		initialized_data[hash_value] = true;
+		++current_size;
+		return hash_value;
+	}
+
+	// How to exit on error here? I think I'm going to use an exception...
+	// Though I could return max_size()
+	SizeType find(Type value)
+	{
+		SizeType hash_value = Hasher(value);
+		hash_value %= max_size();
+		// TODO: finish
 		return 0;
+	}
+
+	// Note: https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-template-class
+	friend std::ostream& operator<<(std::ostream& o, const OneWayHashSet& hs)
+	{
+		o << "Max size: " << hs.max_size() << "\n";
+		o << "Current size: " << hs.size() << "\n";
+		o << "Index - Data - Initialized Data: " << "\n";
+		// TODO: get some indexes here, some ellipses when there's long strings of zeros...
+		for (SizeType i = 0; i < hs.max_size(); ++i)
+		{
+			o << "  " << i << "  " << hs.data[i] << "  " << hs.initialized_data[i] << "\n";
+		}
+
+		return o;
 	}
 };
 
 int main()
 {
 	OneWayHashSet<int, 5> hm;
-	std::cout << hm.max_size() << std::endl;
-	auto Hasher = std::hash<int>();
-	std::cout << Hasher(5) << std::endl;
-	std::cout << Hasher(5) << std::endl;
-	std::cout << std::hash<int>()(5) << std::endl;
+	auto index4 = hm.insert(4);
+	std::cout << index4 << std::endl;
+	auto index5 = hm.insert(5);
+	hm.insert(0);
+	std::cout << index5 << std::endl;
+	std::cout << hm << std::endl;
 }
