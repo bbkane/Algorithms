@@ -123,38 +123,67 @@ template<
 	}
 };
 
-// this is the data attached to the next index
-struct NextData
-{
-	int count = 0;
-	size_t index;
-	NextData(size_t index, int count) : index(index), count(count) {}
-};
 
 // This is the data attached to the first index
-struct PrevData
+struct Data
 {
+	// this is the data attached to the next index
+	struct NextData
+	{
+		int count = 0;
+		size_t index;
+		NextData(size_t index, int count) : index(index), count(count) {}
+	};
+
 	int count = 0;
 	std::vector<NextData> nexts; // I'm just going to linearly search this guy, though I guess I coudl make him a hashset as well
-	PrevData() = default;
+	Data() = default;
 };
+
 
 int main()
 {
-	std::ifstream fin(R"(C:\Users\Ben\Desktop\data.txt)");
-	std::string word;
+	//std::ifstream fin(R"(C:\Users\Ben\Desktop\data.txt)");
+	//std::string word;
 	constexpr size_t max_size = 1 << 5;
 	OneWayHashSet<std::string, max_size> hs;
-	std::array<PrevData, max_size> prev_data;
-	for (size_t i = 0; i < prev_data.size(); ++i)
+
+	std::array<Data, max_size> datas;
+	for (size_t i = 0; i < datas.size(); ++i)
 	{
-		prev_data[i] = PrevData(); // It's initialized now
+		datas[i] = Data(); // It's initialized now
 	}
 
-	fin >> word;
-	auto prev_index = hs.insert(word);
-	while (fin >> word)
-	{
-		
-	}
+	//fin >> word;
+	//auto prev_index = hs.insert(word);
+	//while (fin >> word)
+	//{
+	//	auto index = hs.insert(word);
+	//	Data& prev_data = datas[prev_index];
+	//	prev_data.count++;
+
+	//	//// TODO: replace this whole search with a set? A HashSet would work but it needs to be growable
+	//	//// I should probably test all of this :)
+	//	//bool element_in_nexts = false;
+	//	//for (Data::NextData& e : prev_data.nexts)
+	//	//{
+	//	//	if (e.index == index)
+	//	//	{
+	//	//		e.count++;
+	//	//		element_in_nexts = true;
+	//	//		break;
+	//	//	}
+	//	//}
+	//	//if (!element_in_nexts)
+	//	//{
+	//	//	prev_data.nexts.push_back(Data::NextData(index, 1));
+	//	//}
+
+	//	// Get the next element
+	//	prev_index = index;
+	//}
+
+	// Now how the heck to I test this?
+
+
 }
