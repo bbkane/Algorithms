@@ -61,13 +61,18 @@ template<
 	// This is also the output of Hash, so I'm not sure how flexible it really is
 	using SizeType = std::size_t;
 
-	std::array<Type, MaxSize> data;
+	//std::array<Type, MaxSize> data;
+	std::vector<Type> data;
 	SizeType current_size{ 0 };
 	std::bitset<MaxSize> initialized_data; // always initializes to all 0's
 	Hash Hasher{};
 	Equal Equaler{}; // TODO: right name?
 
-	OneWayHashSet() = default;
+	OneWayHashSet()
+	{
+		data.resize(size()); // This resizes the internal array and fills it with objects in their default state.
+	}
+
 	inline auto size() const { return current_size; }
 	inline auto max_size() const { return MaxSize; }
 	inline auto empty() const { return current_size == 0; }
@@ -167,11 +172,15 @@ int main()
 	std::cout << "Max size: " << max_size << "\n";
 	OneWayHashSet<std::string, max_size> hs;
 
-	std::array<Data, max_size> datas;
-	for (size_t i = 0; i < datas.size(); ++i)
-	{
-		datas[i] = Data(); // It's initialized now
-	}
+	// std::array<Data, max_size> datas;
+
+	// hopefully this is an array replacement
+	std::vector<Data> datas;
+	datas.resize(max_size);
+
+	// TODO: why is hs.data size 0? is it some kind of template issue?
+	std::cout << hs.data.size() << " " << datas.size() << "\n";
+
 	try
 	{
 		fin >> word;
