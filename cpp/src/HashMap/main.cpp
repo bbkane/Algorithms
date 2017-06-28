@@ -1,5 +1,9 @@
 //#include "OneWayHashSet.hpp"
 
+// So I think I got this basically working and then Windows limits the stack size.
+// To overcome this, I'm going to convert std::arrays to std::vectors, call reserve, and carry on.
+// See https://software.intel.com/en-us/articles/memory-limits-applications-windows
+// I also need to use a x64 build. See https://stackoverflow.com/a/28370892/2958070
 
 // The current strategy for a fast text Markov chain implementation
 // for word, next_word in text
@@ -57,7 +61,7 @@ template<
 	// This is also the output of Hash, so I'm not sure how flexible it really is
 	using SizeType = std::size_t;
 
-	std::array<Type, MaxSize> data = { 0 };
+	std::array<Type, MaxSize> data;
 	SizeType current_size{ 0 };
 	std::bitset<MaxSize> initialized_data; // always initializes to all 0's
 	Hash Hasher{};
@@ -81,7 +85,7 @@ template<
 		}
 		SizeType hash_value = Hasher(value);
 		hash_value %= max_size();
-		std::cout << "Hash( " << value << " ) = " << hash_value << std::endl;
+		//std::cout << "Hash( " << value << " ) = " << hash_value << std::endl;
 		while (initialized_data[hash_value])
 		{
 			if (Equaler(data[hash_value], value))
@@ -138,14 +142,29 @@ struct Data
 	int count = 0;
 	std::vector<NextData> nexts; // I'm just going to linearly search this guy, though I guess I coudl make him a hashset as well
 	Data() = default;
+
+	friend std::ostream& operator<<(std::ostream& o, const Data d)
+	{
+		o << "Count: " << d.count << "\n";
+		o << "Nexts: \n";
+		for (auto& n : d.nexts)
+		{
+			o << "  " << "Count: " << n.count << "  Index: " << n.index << "\n";
+		}
+		return o;
+	}
 };
 
 
 int main()
 {
-	//std::ifstream fin(R"(C:\Users\Ben\Desktop\data.txt)");
-	//std::string word;
-	constexpr size_t max_size = 1 << 5;
+	//std::ifstream fin(R"(C:\Users\Ben\Desktop\war_and_peace.txt)");
+	std::ifstream fin(R"(C:\Users\Ben\Desktop\data.txt)");
+	std::string word;
+	std::cout << "Hi\n";
+	//constexpr size_t max_size = (0x7fffffff / sizeof(Data)) / 24;
+	constexpr size_t max_size = 12;
+	std::cout << "Max size: " << max_size << "\n";
 	OneWayHashSet<std::string, max_size> hs;
 
 	std::array<Data, max_size> datas;
@@ -153,37 +172,48 @@ int main()
 	{
 		datas[i] = Data(); // It's initialized now
 	}
+	try
+	{
+		fin >> word;
+		auto prev_index = hs.insert(word);
+		while (fin >> word)
+		{
+			auto index = hs.insert(word);
+			Data& prev_data = datas[prev_index];
+			prev_data.count++;
 
-	//fin >> word;
-	//auto prev_index = hs.insert(word);
-	//while (fin >> word)
-	//{
-	//	auto index = hs.insert(word);
-	//	Data& prev_data = datas[prev_index];
-	//	prev_data.count++;
+			// TODO: replace this whole search with a set? A HashSet would work but it needs to be growable
+			// I should probably test all of this :)
+			bool element_in_nexts = false;
+			for (Data::NextData& e : prev_data.nexts)
+			{
+				if (e.index == index)
+				{
+					e.count++;
+					element_in_nexts = true;
+					break;
+				}
+			}
+			if (!element_in_nexts)
+			{
+				prev_data.nexts.push_back(Data::NextData(index, 1));
+			}
 
-	//	//// TODO: replace this whole search with a set? A HashSet would work but it needs to be growable
-	//	//// I should probably test all of this :)
-	//	//bool element_in_nexts = false;
-	//	//for (Data::NextData& e : prev_data.nexts)
-	//	//{
-	//	//	if (e.index == index)
-	//	//	{
-	//	//		e.count++;
-	//	//		element_in_nexts = true;
-	//	//		break;
-	//	//	}
-	//	//}
-	//	//if (!element_in_nexts)
-	//	//{
-	//	//	prev_data.nexts.push_back(Data::NextData(index, 1));
-	//	//}
+			// Get the next element ready to be processed
+			prev_index = index;
+		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cout << e.what() << std::endl;
+		std::terminate();
+	}
 
-	//	// Get the next element
-	//	prev_index = index;
-	//}
+	// TODO: come up with a better way to test this...
+	std::cout << hs << std::endl;
 
-	// Now how the heck to I test this?
-
-
+	for (std::size_t i = 0; i < datas.size(); ++i)
+	{
+		std::cout << "  " << i << "  " << datas[i] << "\n";
+	}
 }
