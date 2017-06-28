@@ -70,7 +70,7 @@ template<
 
 	OneWayHashSet()
 	{
-		data.resize(size()); // This resizes the internal array and fills it with objects in their default state.
+		data.resize(max_size()); // This resizes the internal array and fills it with objects in their default state.
 	}
 
 	inline auto size() const { return current_size; }
@@ -163,12 +163,13 @@ struct Data
 
 int main()
 {
-	//std::ifstream fin(R"(C:\Users\Ben\Desktop\war_and_peace.txt)");
-	std::ifstream fin(R"(C:\Users\Ben\Desktop\data.txt)");
+	std::ifstream fin(R"(C:\Users\Ben\Desktop\war_and_peace.txt)");
+	//std::ifstream fin(R"(C:\Users\Ben\Desktop\data.txt)");
 	std::string word;
 	std::cout << "Hi\n";
 	//constexpr size_t max_size = (0x7fffffff / sizeof(Data)) / 24;
-	constexpr size_t max_size = 12;
+	constexpr size_t max_size = 1'000'000;
+	//constexpr size_t max_size = 12;
 	std::cout << "Max size: " << max_size << "\n";
 	OneWayHashSet<std::string, max_size> hs;
 
@@ -218,11 +219,31 @@ int main()
 		std::terminate();
 	}
 
-	// TODO: come up with a better way to test this...
-	std::cout << hs << std::endl;
-
-	for (std::size_t i = 0; i < datas.size(); ++i)
+	std::size_t total_unique_words = 0;
+	std::string most_used_word;
+	std::size_t most_used_word_count = 0;
+	for (std::size_t i = 0; i < hs.data.size(); ++i)
 	{
-		std::cout << "  " << i << "  " << datas[i] << "\n";
+
+		if (hs.initialized_data[i])
+		{
+			std::cout << hs.data[i] << " " << datas[i].count << "\n";
+			total_unique_words++;
+
+			if (datas[i].count > most_used_word_count)
+			{
+				most_used_word = hs.data[i];
+				most_used_word_count = datas[i].count;
+			}
+		}
 	}
+	std::cout << "Total unique words: " << total_unique_words << "\n";
+	std::cout << "Most used word: " << most_used_word << " at " << most_used_word_count << "\n";
+	//// TODO: come up with a better way to test this...
+	//std::cout << hs << std::endl;
+
+	//for (std::size_t i = 0; i < datas.size(); ++i)
+	//{
+	//	std::cout << "  " << i << "  " << datas[i] << "\n";
+	//}
 }
