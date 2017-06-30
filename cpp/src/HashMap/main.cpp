@@ -97,7 +97,7 @@ template<
 			{
 				return hash_value;
 			}
-			hash_value = (hash_value + 1) % size();
+			hash_value = (hash_value + 1) % max_size();
 		}
 		data[hash_value] = value;
 		initialized_data[hash_value] = true;
@@ -160,90 +160,111 @@ struct Data
 	}
 };
 
+template <std::size_t MaxSize>
+struct MarkovChain
+{
+	inline auto max_size() const { return MaxSize; }
+	OneWayHashSet<std::string, MaxSize> hs;
+	std::vector<Data> datas;
+
+	MarkovChain()
+	{
+		datas.resize(MaxSize);
+	}
+
+	void load_from_text_file(const char* text_file_path)
+	{
+		std::ifstream fin(text_file_path);
+		std::string word;
+		try
+		{
+			fin >> word;
+			auto prev_index = hs.insert(word);
+			while (fin >> word)
+			{
+				auto index = hs.insert(word);
+				Data& prev_data = datas[prev_index];
+				prev_data.count++;
+
+				// TODO: replace this whole search with a set? A HashSet would work but it needs to be growable
+				// I should probably test all of this :)
+				bool element_in_nexts = false;
+				for (Data::NextData& e : prev_data.nexts)
+				{
+					if (e.index == index)
+					{
+						e.count++;
+						element_in_nexts = true;
+						break;
+					}
+				}
+				if (!element_in_nexts)
+				{
+					prev_data.nexts.push_back(Data::NextData(index, 1));
+				}
+
+				// Get the next element ready to be processed
+				prev_index = index;
+			}
+		}
+		catch (const std::exception& e)
+		{
+			std::cout << e.what() << std::endl;
+			std::terminate();
+		}
+	}
+
+	void print_stats()
+	{
+		std::size_t total_unique_words = 0;
+		std::string most_used_word;
+		std::size_t most_used_word_count = 0;
+		for (std::size_t i = 0; i < hs.max_size(); ++i)
+		{
+
+			if (hs.initialized_data[i])
+			{
+				// std::cout << hs.data[i] << " " << datas[i].count << "\n";
+				total_unique_words++;
+
+				if (datas[i].count > most_used_word_count)
+				{
+					most_used_word = hs.data[i];
+					most_used_word_count = datas[i].count;
+				}
+			}
+		}
+		std::cout << "Total unique words: " << total_unique_words << "\n";
+		std::cout << "Most used word: " << most_used_word << " at " << most_used_word_count << "\n";
+		std::cout << "size " << hs.size() << std::endl;
+	}
+
+	std::size_t get_next_index(std::size_t current_index)
+	{
+
+	}
+	// I'd have to serialize nested data- Ewww
+	// Maybe get a JSON parser here or SQLite?
+	// If I use SQLite the analysis will be slower
+	// But I can use SQL... and whatever can talk to SQLite...
+	// I'm going to punt it for now
+
+
+};
+
+int main1()
+{
+
+	constexpr size_t max_size = 100'000;
+	auto markov_chain = MarkovChain<max_size>();
+	markov_chain.load_from_text_file(R"(C:\Users\Ben\Desktop\war_and_peace.txt)");
+	markov_chain.print_stats();
+
+	return 0;
+}
+
 
 int main()
 {
-	std::ifstream fin(R"(C:\Users\Ben\Desktop\war_and_peace.txt)");
-	//std::ifstream fin(R"(C:\Users\Ben\Desktop\data.txt)");
-	std::string word;
-	std::cout << "Hi\n";
-	//constexpr size_t max_size = (0x7fffffff / sizeof(Data)) / 24;
-	constexpr size_t max_size = 1'000'000;
-	//constexpr size_t max_size = 12;
-	std::cout << "Max size: " << max_size << "\n";
-	OneWayHashSet<std::string, max_size> hs;
-
-	// std::array<Data, max_size> datas;
-
-	// hopefully this is an array replacement
-	std::vector<Data> datas;
-	datas.resize(max_size);
-
-	// TODO: why is hs.data size 0? is it some kind of template issue?
-	std::cout << hs.data.size() << " " << datas.size() << "\n";
-
-	try
-	{
-		fin >> word;
-		auto prev_index = hs.insert(word);
-		while (fin >> word)
-		{
-			auto index = hs.insert(word);
-			Data& prev_data = datas[prev_index];
-			prev_data.count++;
-
-			// TODO: replace this whole search with a set? A HashSet would work but it needs to be growable
-			// I should probably test all of this :)
-			bool element_in_nexts = false;
-			for (Data::NextData& e : prev_data.nexts)
-			{
-				if (e.index == index)
-				{
-					e.count++;
-					element_in_nexts = true;
-					break;
-				}
-			}
-			if (!element_in_nexts)
-			{
-				prev_data.nexts.push_back(Data::NextData(index, 1));
-			}
-
-			// Get the next element ready to be processed
-			prev_index = index;
-		}
-	}
-	catch (const std::exception& e)
-	{
-		std::cout << e.what() << std::endl;
-		std::terminate();
-	}
-
-	std::size_t total_unique_words = 0;
-	std::string most_used_word;
-	std::size_t most_used_word_count = 0;
-	for (std::size_t i = 0; i < hs.data.size(); ++i)
-	{
-
-		if (hs.initialized_data[i])
-		{
-			std::cout << hs.data[i] << " " << datas[i].count << "\n";
-			total_unique_words++;
-
-			if (datas[i].count > most_used_word_count)
-			{
-				most_used_word = hs.data[i];
-				most_used_word_count = datas[i].count;
-			}
-		}
-	}
-	std::cout << "Total unique words: " << total_unique_words << "\n";
-	std::cout << "Most used word: " << most_used_word << " at " << most_used_word_count << "\n";
-	//// TODO: come up with a better way to test this...
-	//std::cout << hs << std::endl;
-
-	//for (std::size_t i = 0; i < datas.size(); ++i)
-	//{
-	//	std::cout << "  " << i << "  " << datas[i] << "\n";
-	//}
+	main1();
 }
